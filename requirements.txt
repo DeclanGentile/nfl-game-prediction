@@ -1,0 +1,9 @@
+pandas>=2.2
+numpy>=1.26
+SQLAlchemy>=2.0
+psycopg2-binary>=2.9
+python-dotenv>=1.0
+scikit-learn>=1.5
+xgboost>=2.0
+joblib>=1.4
+matplotlib>=3.8

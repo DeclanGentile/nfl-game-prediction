@@ -1,0 +1,23 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment files
+.env
+*.env
+
+# Large/sensitive data
+*.csv
+*.parquet
+*.joblib
+
+# VS Code
+.vscode/
+
+# Loader scripts (excluded for clarity)
+load_*.py
+backtest.py
+evaluate.py
+build_features_and_model.py
