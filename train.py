@@ -40,27 +40,32 @@ def load_game_level_features():
     # Target = did the home team win?
     y = games["team_win_home"].astype(int)
 
-    # Exclude identifiers and leakage columns
+    # Drop known leakage / identifier columns
     exclude = [
-    "game_id", "season_home", "week_home", "kickoff_ts_home",
-    "home_team_home", "away_team_home",
-    "home_score_home", "away_score_home",
-    "home_score_away", "away_score_away",  
-    "team_win_home", "team_win_away",
-    "completed_home", "completed_away",
-    "season_type_home", "season_type_away",
-    "is_home_home", "is_home_away"
-]
-    
+        "game_id",
+        "season_home", "season_away",
+        "week_home", "week_away",
+        "kickoff_ts_home", "kickoff_ts_away",
+        "home_team_home", "away_team_home",
+        "home_score_home", "away_score_home",
+        "home_score_away", "away_score_away",
+        "team_win_home", "team_win_away",
+        "completed_home", "completed_away",
+        "season_type_home", "season_type_away",
+        "is_home_home", "is_home_away"
+    ]
+
+    # Candidate features
     feature_cols = [c for c in games.columns if c not in exclude]
 
     # Keep only numeric features
     X = games[feature_cols].select_dtypes(include=[np.number]).fillna(0.0)
+    numeric_features = list(X.columns)
 
-    print("\n[DEBUG] Training with", len(X.columns), "numeric features:")
-    print(list(X.columns)[:20], "...\n")
+    logger.info(f"[DEBUG] Using {len(numeric_features)} numeric features for training")
+    logger.debug(f"Features: {numeric_features}")
 
-    return X, y, list(X.columns)
+    return X, y, numeric_features
 
 # ----------------------
 # Train models
@@ -80,6 +85,7 @@ def train_and_select_model(X, y):
 
     best_model = None
     best_score = float("inf")
+    best_name = None
 
     for name, model in models.items():
         logger.info(f"Tuning {name}…")
@@ -89,6 +95,9 @@ def train_and_select_model(X, y):
         if -grid.best_score_ < best_score:
             best_score = -grid.best_score_
             best_model = grid.best_estimator_
+            best_name = name
+
+    logger.info(f"Selected best model: {best_name} (logloss={best_score:.4f})")
 
     # Calibrate probabilities
     logger.info("Calibrating best model…")
@@ -100,7 +109,7 @@ def train_and_select_model(X, y):
 # ----------------------
 # Plot + Save Feature Importances
 # ----------------------
-def plot_feature_importance(model, features, outdir="H:/NFL/models"):
+def plot_feature_importance(model, features, outdir=MODELS_PATH):
     os.makedirs(outdir, exist_ok=True)
     outpath_img = os.path.join(outdir, "feature_importance.png")
     outpath_csv = os.path.join(outdir, "feature_importance.csv")
@@ -110,7 +119,7 @@ def plot_feature_importance(model, features, outdir="H:/NFL/models"):
     elif hasattr(model, "coef_"):
         importances = np.abs(model.coef_[0])
     else:
-        logger.info("Model does not provide feature importances.")
+        logger.warning("Model does not provide feature importances.")
         return
 
     sorted_idx = np.argsort(importances)[::-1]
@@ -131,8 +140,8 @@ def plot_feature_importance(model, features, outdir="H:/NFL/models"):
     })
     imp_df.to_csv(outpath_csv, index=False)
 
-    print(f"[INFO] Saved feature importance chart → {outpath_img}")
-    print(f"[INFO] Saved feature importance values → {outpath_csv}")
+    logger.info(f"Saved feature importance chart → {outpath_img}")
+    logger.info(f"Saved feature importance values → {outpath_csv}")
 
 # ----------------------
 # Main
@@ -173,7 +182,7 @@ def main():
     logger.info(f"Saved features → {feat_file}")
     logger.info(f"Saved threshold = {best_thresh:.2f}")
 
-    # Save feature importances (use raw_model to bypass calibration wrapper)
+    # Save feature importances (use raw_model, not calibrated wrapper)
     plot_feature_importance(raw_model, feature_cols)
 
 if __name__ == "__main__":

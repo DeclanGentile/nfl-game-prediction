@@ -36,30 +36,25 @@ def load_model():
 # Build upcoming games frame (game-level)
 # ----------------------
 def upcoming_game_features():
-    # Get full feature set for current season
     tg = build_features(
         season_start=CURRENT_SEASON,
         season_end=CURRENT_SEASON,
         include_future=True
     )
 
-    # Only upcoming (no result yet)
     tg_upcoming = tg[tg["team_win"].isna()].copy()
     if tg_upcoming.empty:
-        return pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame()
 
-    # Split into home/away rows
     home = tg_upcoming[tg_upcoming["is_home"] == 1].copy()
     away = tg_upcoming[tg_upcoming["is_home"] == 0].copy()
 
-    # Merge into one row per game
     games = home.merge(
         away,
         on="game_id",
         suffixes=("_home", "_away")
     )
 
-    # Keep identifying info
     out = games[[
         "game_id", "season_home", "week_home",
         "home_team_home", "away_team_home", "kickoff_ts_home"
@@ -87,11 +82,15 @@ def main():
         print("No upcoming games found.")
         return
 
-    # Filter to numeric columns only, in the order model expects
-    cols = [c for c in features if c in games.columns]
-    X = games[cols].select_dtypes(include=[np.number]).fillna(0.0).astype(float)
-    
-    # Probabilities (P(home team wins))
+    # Keep only numeric features and those expected by the model
+    numeric_cols = games.select_dtypes(include=[np.number]).columns
+    cols = [c for c in features if c in numeric_cols]
+    X = games[cols].fillna(0.0).astype(float)
+
+    if X.empty:
+        raise ValueError("No valid numeric features found for upcoming games!")
+
+    # Probabilities
     proba_home = model.predict_proba(X)[:, 1]
     proba_away = 1 - proba_home
 
@@ -100,18 +99,15 @@ def main():
     out["pick"] = np.where(proba_home >= threshold, out["home_team"], out["away_team"])
     out["confidence"] = np.abs(proba_home - 0.5) * 2  # 0..1
 
-    # Clean human-readable string
     out["prediction_str"] = (
         out["home_team"] + " " + (out["home_win_prob"] * 100).round(1).astype(str) + "% vs "
         + out["away_team"] + " " + (out["away_win_prob"] * 100).round(1).astype(str)
     )
 
-    # Print to console
     print("\n=== Upcoming Game Predictions (Team vs Team) ===")
     for _, row in out.sort_values(["season", "week", "kickoff_ts"]).iterrows():
         print(f"{row['game_id']} | {row['prediction_str']} | Pick: {row['pick']} | Conf: {row['confidence']:.2f}")
 
-    # Save to CSV
     csv_path = os.path.join(MODELS_PATH, "predictions_upcoming.csv")
     out.to_csv(csv_path, index=False)
     print(f"\nSaved predictions → {csv_path}")
