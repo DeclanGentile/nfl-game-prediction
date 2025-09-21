@@ -18,6 +18,6 @@ __pycache__/
 
 # Loader scripts (excluded for clarity)
 load_*.py
-backtest.py
 evaluate.py
 build_features_and_model.py
+getlogos.py
