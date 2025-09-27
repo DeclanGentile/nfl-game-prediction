@@ -8,10 +8,6 @@ from utils import get_logger
 
 logger = get_logger("predict")
 
-
-# ----------------------
-# Load model + metadata
-# ----------------------
 def load_model():
     path = os.path.join(MODELS_PATH, "best_model.joblib")
     if not os.path.exists(path):
@@ -32,9 +28,6 @@ def load_model():
     return model, features, threshold
 
 
-# ----------------------
-# Build upcoming games frame (game-level)
-# ----------------------
 def upcoming_game_features():
     tg = build_features(
         season_start=CURRENT_SEASON,
@@ -70,9 +63,7 @@ def upcoming_game_features():
     return out, games
 
 
-# ----------------------
-# Main
-# ----------------------
+
 def main():
     model, features, threshold = load_model()
 
@@ -82,7 +73,7 @@ def main():
         print("No upcoming games found.")
         return
 
-    # Keep only numeric features and those expected by the model
+    #Keep only numeric features and those expected by the model
     numeric_cols = games.select_dtypes(include=[np.number]).columns
     cols = [c for c in features if c in numeric_cols]
     X = games[cols].fillna(0.0).astype(float)
@@ -90,7 +81,7 @@ def main():
     if X.empty:
         raise ValueError("No valid numeric features found for upcoming games!")
 
-    # Probabilities
+    #Probabilities for outcomes
     proba_home = model.predict_proba(X)[:, 1]
     proba_away = 1 - proba_home
 

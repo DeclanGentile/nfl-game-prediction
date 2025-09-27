@@ -18,10 +18,6 @@ INJ_WEIGHTS = {
     "DL": 3, "LB": 2, "DB": 3, "S": 3, "CB": 3
 }
 
-# ----------------------
-# Loaders
-# ----------------------
-
 def load_games(season_start=None, season_end=None, only_upcoming=False) -> pd.DataFrame:
     q = f"""
     SELECT
@@ -102,9 +98,6 @@ def load_injuries_agg() -> pd.DataFrame:
     """
     return read_sql_df(q)
 
-# ----------------------
-# Builders
-# ----------------------
 
 def build_team_game_rows(games: pd.DataFrame) -> pd.DataFrame:
     home = games.copy()
@@ -205,9 +198,6 @@ def add_matchup_features(games: pd.DataFrame) -> pd.DataFrame:
     games["ypp_off_vs_def"] = games["off_ypp"] - games["def_ypp"]
     return games
 
-# ----------------------
-# Unified builder
-# ----------------------
 
 def build_features(season_start=None, season_end=None, include_future=False) -> pd.DataFrame:
     logger.info("Loading games…")
@@ -241,9 +231,6 @@ def build_features(season_start=None, season_end=None, include_future=False) -> 
 
     return tg
 
-# ----------------------
-# CLI
-# ----------------------
 
 def main():
     Path(PROCESSED_DATA_PATH).mkdir(parents=True, exist_ok=True)
@@ -256,7 +243,7 @@ def main():
     tg_full = build_features(TRAIN_SEASONS_START, TEST_SEASONS_END, include_future=True)
     tg_full.to_parquet(os.path.join(PROCESSED_DATA_PATH, "features_full.parquet"), index=False)
 
-    print("Wrote training, features, and full datasets ✅")
+    print("Wrote training, features, and full datasets!")
 
 if __name__ == "__main__":
     main()

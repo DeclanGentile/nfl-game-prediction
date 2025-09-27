@@ -15,9 +15,6 @@ from features import build_features
 
 logger = get_logger("train")
 
-# ----------------------
-# Load and prepare game-level features
-# ----------------------
 def load_game_level_features():
     tg = build_features(
         season_start=TRAIN_SEASONS_START,
@@ -67,9 +64,6 @@ def load_game_level_features():
 
     return X, y, numeric_features
 
-# ----------------------
-# Train models
-# ----------------------
 def train_and_select_model(X, y):
     models = {
         "logreg": LogisticRegression(max_iter=2000),
@@ -106,9 +100,6 @@ def train_and_select_model(X, y):
 
     return calibrated, best_model
 
-# ----------------------
-# Plot + Save Feature Importances
-# ----------------------
 def plot_feature_importance(model, features, outdir=MODELS_PATH):
     os.makedirs(outdir, exist_ok=True)
     outpath_img = os.path.join(outdir, "feature_importance.png")
@@ -143,9 +134,6 @@ def plot_feature_importance(model, features, outdir=MODELS_PATH):
     logger.info(f"Saved feature importance chart → {outpath_img}")
     logger.info(f"Saved feature importance values → {outpath_csv}")
 
-# ----------------------
-# Main
-# ----------------------
 def main():
     Path(MODELS_PATH).mkdir(parents=True, exist_ok=True)
 
@@ -167,7 +155,7 @@ def main():
 
     # Threshold optimization
     probs = model.predict_proba(X)[:, 1]
-    thresholds = np.linspace(0.4, 0.6, 21)
+    thresholds = np.linspace(0.49, 0.51, 21)
     best_thresh, best_acc = 0.5, 0
     for t in thresholds:
         acc = (probs >= t).astype(int).mean()
