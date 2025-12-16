@@ -1,5 +1,4 @@
 # NFL Game Prediction Project
-## Current Record: 12 - 4
 This project builds and trains a machine learning model to predict the outcome of NFL games using historical data, play-by-play stats, betting lines, and injuries.
 
 ## How it works
